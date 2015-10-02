@@ -1,0 +1,15 @@
+{
+	"weight" : 2,
+	"expose" : {
+			"watchdog_ovp_ip" : "127.0.0.1",
+			"watchdog_ovp_port" : 8101,
+			"watchdog_serf_port" : 8201
+		},
+			
+	"numofpeers" : 1,
+	"mongourls" : ["127.0.0.1:27017"],		
+	"mongo_credentials" : {
+		"username" : "orbitadmin",
+		"password" : "orbitpwd"
+	}
+}
