@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fithisux/orbit-dc-protector/utilities"
 	"github.com/hashicorp/memberlist"
+	"strconv"
 )
 
 type MemberlistAgent struct {
@@ -44,7 +45,7 @@ func (ma *MemberlistAgent) Join(pl *utilities.PersistencyLayer,bound int) {
 	if len(exposelist) >= 1 {
 		peerlist := make([]string, len(exposelist))
 		for i := 0; i < len(exposelist); i++ {
-			peerlist[i] = exposelist[i].Ovip + ":" + exposelist[i].Serfport
+			peerlist[i] = exposelist[i].Ovip +":"+strconv.Itoa(exposelist[i].Serfport)
 			fmt.Println("Join point " + peerlist[i])
 		}
 		_, err := ma.list.Join(peerlist)
