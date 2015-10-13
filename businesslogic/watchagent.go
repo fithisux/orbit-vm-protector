@@ -143,7 +143,6 @@ func ReportHostevents(w *Watchagent) {
 			servermutex.Unlock()
 
 			if ok {
-				w.pl.Changeweight(-1)
 				w.pl.Makefailed(sd)
 				for vmuuid := range vmdata.Servervms {
 					_ = MakeKnown(vmuuid, w.Serverconf)
@@ -171,7 +170,7 @@ func (w *Watchagent) Join() *OrbitError {
 		return &OrbitError{false, "Is not parked"}
 	}
 
-	w.ma.Join(w.pl)
+	w.ma.Join(w.pl,w.Serverconf.Numofwatchers)
 	servermutex.Lock()
 	w.Agentparked = false
 	servermutex.Unlock()
@@ -243,7 +242,6 @@ func (w *Watchagent) Watch(wd *Watchmedata) *OrbitError {
 		w.watched[wd.Expose] = wd.Serverdata
 	}
 	servermutex.Unlock()
-	w.pl.Changeweight(1)
 	return &OrbitError{true, ""}
 }
 
@@ -261,7 +259,7 @@ func (w *Watchagent) Unwatch(wd *Watchmedata) *OrbitError {
 		delete(w.watched, wd.Expose)
 	}
 	servermutex.Unlock()
-	w.pl.Changeweight(-1)
+	
 
 	if !ok {
 		return &OrbitError{false, fmt.Sprintf("not found %s", wd.Expose)}

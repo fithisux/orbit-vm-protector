@@ -38,8 +38,8 @@ func CreateMemberlistAgent(wa *Watchagent) *MemberlistAgent {
 	return ma
 }
 
-func (ma *MemberlistAgent) Join(pl *utilities.PersistencyLayer) {
-	exposelist := pl.SamplePeers()
+func (ma *MemberlistAgent) Join(pl *utilities.PersistencyLayer,bound int) {
+	exposelist := pl.GetOVPPeers(bound)
 
 	if len(exposelist) >= 1 {
 		peerlist := make([]string, len(exposelist))
