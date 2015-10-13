@@ -25,6 +25,7 @@ func CreateMemberlistAgent(wa *Watchagent) *MemberlistAgent {
 	fmt.Println("c3")
 	c.Name = wa.pl.Ovpdata.OVPExpose.Name()
 	fmt.Println("c4")
+	c.BindAddr=wa.pl.Ovpdata.OVPExpose.Ovip
 	c.BindPort = wa.pl.Ovpdata.OVPExpose.Serfport
 	c.Events = wa.Observeme
 	fmt.Println("c5")
