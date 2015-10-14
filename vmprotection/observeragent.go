@@ -1,5 +1,5 @@
 // observeragent.go
-package businesslogic
+package vmprotection
 
 import (
 	"fmt"

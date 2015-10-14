@@ -19,7 +19,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 // jsonutil.go
 
-package businesslogic
+package vmprotection
 
 // #cgo pkg-config: libvirt
 // #include <stdio.h>

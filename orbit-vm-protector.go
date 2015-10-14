@@ -22,7 +22,7 @@ package main
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/fithisux/orbit-vm-protector/businesslogic"
+	"github.com/fithisux/orbit-vm-protector/vmprotection"
 	"github.com/fithisux/orbit-dc-protector/utilities"
 	"net/http"
 	"time"
@@ -30,12 +30,12 @@ import (
 	"strconv"
 )
 
-var wa *businesslogic.Watchagent
+var wa *vmprotection.Watchagent
 
 
 func orbit_watchme(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_watchme")
-	params := new(businesslogic.Watchmedata)
+	params := new(vmprotection.Watchmedata)
 	err := request.ReadEntity(params)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
@@ -48,7 +48,7 @@ func orbit_watchme(request *restful.Request, response *restful.Response) { //sto
 
 func orbit_unwatchme(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_unwatchme")
-	params := new(businesslogic.Watchmedata)
+	params := new(vmprotection.Watchmedata)
 	err := request.ReadEntity(params)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
@@ -92,7 +92,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	wa = businesslogic.CreateWatchAgent(conf)
+	wa = vmprotection.CreateWatchAgent(conf)
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")
 	ws := new(restful.WebService)
@@ -118,6 +118,6 @@ func main() {
 	*/
 
 	log.Printf("start listening on localhost:%d\n",conf.Exposeconfig.Ovpexpose.Announceport)
-	server := &http.Server{Addr: ":"+strconv.Itoa(conf.Exposeconfig.Ovpexpose.Announceport), Handler: wsContainer}
+	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip+":"+strconv.Itoa(conf.Exposeconfig.Ovpexpose.Announceport), Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }
