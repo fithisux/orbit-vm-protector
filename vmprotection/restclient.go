@@ -85,7 +85,7 @@ func Broadcast(wd *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue 
 func MakeKnown(vmuuid string, json *utilities.ServerConfig) *OrbitError {
 
 	fmt.Println("makeknown for " + vmuuid)
-	cmd := exec.Command("./failover", vmuuid+" "+json.Exposeconfig.Ovpexpose.Ovip)
+	cmd := exec.Command("./failover", vmuuid)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
