@@ -58,10 +58,12 @@ func SendToWatcher(wd *Watchmedata,
 
 	if err != nil {
 		log.Printf("failed to watchme on " + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + " because " + err.Error())
+		return
 	}
 
 	if resp.Status() != 200 {
 		log.Printf("failed to watchme on " + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + " because " + strconv.Itoa(resp.Status()) + "..." + e.Message)
+		return
 	}
 
 	queue.Enqueue(destination)
