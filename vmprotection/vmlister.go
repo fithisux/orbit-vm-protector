@@ -66,7 +66,7 @@ func myReportEvent(vir_dom_name *C.char, vir_dom_id C.uint, vir_event C.int, vir
 	fmt.Println("Event is " + strconv.Itoa(eventtype))
 	fmt.Println("Detail is " + strconv.Itoa(eventdetail))
 	switch eventtype {
-	case VIR_DOMAIN_EVENT_CRASHED:
+	case VIR_DOMAIN_EVENT_STOPPED:
 		{
 			if eventdetail == 2 || eventdetail == 5{
 				fmt.Println("Crashed -1")
