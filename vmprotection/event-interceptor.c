@@ -296,7 +296,7 @@ int main1()
     VIR_DEBUG("Registering listing domains");
     virDomainPtr *domains;
     size_t i;
-    int ret;
+    int ret,ret2;
     unsigned int flags = VIR_CONNECT_LIST_DOMAINS_RUNNING |
     VIR_CONNECT_LIST_DOMAINS_PERSISTENT;
     ret = virConnectListAllDomains(dconn, &domains, flags);
@@ -305,8 +305,8 @@ int main1()
     exit(-1);
     char * buf = (char *) malloc(VIR_UUID_STRING_BUFLEN);
     for (i = 0; i < ret; i++) {
-        ret=virDomainGetUUIDString(domains[i],buf);
-        if (ret < 0) {
+        ret2=virDomainGetUUIDString(domains[i],buf);
+        if (ret2 < 0) {
             VIR_DEBUG("Failed to get uuid");
             exit(-1);
         }
