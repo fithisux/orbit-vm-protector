@@ -62,13 +62,17 @@ func myReportEvent(vir_dom_name *C.char, vir_dom_id C.uint, vir_event C.int, vir
 	fmt.Printf("Reporting ID = %d and UUID = %s\n", vmid, vmuuid)
 
 	eventtype := int(vir_event)
+	eventdetail := int(vir_detail)
 	fmt.Println("Event is " + strconv.Itoa(eventtype))
+	fmt.Println("Detail is " + strconv.Itoa(eventdetail))
 	switch eventtype {
 	case VIR_DOMAIN_EVENT_CRASHED:
 		{
-			fmt.Println("Crashed -1")
-			delete(vmlista, vmuuid)
-			Tokenchan <- Listtoken{2, vmuuid, vmlista}
+			if eventdetail == 2 || eventdetail == 5{
+				fmt.Println("Crashed -1")
+				delete(vmlista, vmuuid)
+				Tokenchan <- Listtoken{2, vmuuid, vmlista}				
+			}			
 		}
 	case VIR_DOMAIN_EVENT_SHUTDOWN:
 		{
