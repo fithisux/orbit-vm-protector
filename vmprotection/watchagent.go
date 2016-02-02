@@ -60,13 +60,14 @@ type Watchdesc struct {
 }
 
 type Watchagent struct {
-	Agentparked bool
-	Serverconf  *utilities.ServerConfig
-	pl          *utilities.PersistencyLayer
-	watched     map[utilities.OVPExpose]VMdata
-	ma          *MemberlistAgent
-	Observeme   *Observer
-	Watchers    []utilities.OVPExpose
+	Agentparked      bool
+	Serverconf       *utilities.ServerConfig
+	persistencylayer *utilities.PersistencyLayer
+	Ovpdata          *utilities.OVPData
+	watched          map[utilities.OVPExpose]VMdata
+	ma               *MemberlistAgent
+	Observeme        *Observer
+	Watchers         []utilities.OVPExpose
 }
 
 type OrbitError struct {
@@ -75,38 +76,39 @@ type OrbitError struct {
 }
 
 func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
-	w := new(Watchagent)
-	w.Serverconf = json
-	w.Agentparked = true
-	w.watched = make(map[utilities.OVPExpose]VMdata)
-	w.pl = utilities.CreatePersistencyOVP(&json.Exposeconfig, &json.Dbconfig)
+	watchagent := new(Watchagent)
+	watchagent.Serverconf = json
+	watchagent.Agentparked = true
+	watchagent.watched = make(map[utilities.OVPExpose]VMdata)
+	watchagent.persistencylayer = utilities.CreatePersistencyLayer(&json.Dbconfig)
+	watchagent.Ovpdata = watchagent.persistencylayer.InitializeOVP(&json.Exposeconfig)
 	vmdata := new(VMdata)
-	vmdata.Serverepoch = w.pl.Ovpdata.Epoch
-	w.watched[json.Exposeconfig.Ovpexpose] = *vmdata
-	w.Observeme = CreateObserver()
-	go ReportHostevents(w)
-	w.ma = CreateMemberlistAgent(w)
-	go ReportVMEvents(w)
-	return w
+	vmdata.Serverepoch = watchagent.Ovpdata.Epoch
+	watchagent.watched[json.Exposeconfig.Ovpexpose] = *vmdata
+	watchagent.Observeme = CreateObserver()
+	go ReportHostevents(watchagent)
+	watchagent.ma = CreateMemberlistAgent(watchagent)
+	go ReportVMEvents(watchagent)
+	return watchagent
 }
 
-func ReportVMEvents(w *Watchagent) {
+func ReportVMEvents(watchagent *Watchagent) {
 	fmt.Println("Started reportvmevents")
 	go Runme()
 	fmt.Println("listening on tokenchan")
 	for x := range Tokenchan {
 		fmt.Println("got one")
-		vmdata := VMdata{w.pl.Ovpdata.Epoch, x.Vmlista}
+		vmdata := VMdata{watchagent.Ovpdata.Epoch, x.Vmlista}
 		servermutex.Lock()
-		w.watched[w.pl.Ovpdata.OVPExpose] = vmdata
+		watchagent.watched[watchagent.Ovpdata.OVPExpose] = vmdata
 		servermutex.Unlock()
 		if x.Status == 2 {
-			MakeKnown(x.Vmuuid, w.Serverconf)
+			MakeKnown(x.Vmuuid, watchagent.Serverconf)
 		}
 		fmt.Printf("Broadcasted to %d\n", len(x.Vmlista))
-		wd := Watchmedata{w.pl.Ovpdata.OVPExpose, vmdata}
+		wd := Watchmedata{watchagent.Ovpdata.OVPExpose, vmdata}
 		servermutex.Lock()
-		wwatchers := w.Watchers
+		wwatchers := watchagent.Watchers
 		servermutex.Unlock()
 		if wwatchers != nil {
 			q := Broadcast(&wd, wwatchers) //TODO, do something on error
@@ -143,7 +145,7 @@ func ReportHostevents(w *Watchagent) {
 			servermutex.Unlock()
 
 			if ok {
-				w.pl.Makefailed(sd)
+				w.persistencylayer.Makefailed(sd)
 				for vmuuid := range vmdata.Servervms {
 					_ = MakeKnown(vmuuid, w.Serverconf)
 				}
@@ -153,10 +155,10 @@ func ReportHostevents(w *Watchagent) {
 	}
 }
 
-func (w *Watchagent) findWatchers(wd *Watchmedata, bound int) *lane.Queue {
+func (w *Watchagent) findWatchers(watchmetadata *Watchmedata, bound int, ovpdata *utilities.OVPData) *lane.Queue {
 
-	destinations := w.pl.GetOVPPeers(bound)
-	queue := Broadcast(wd, destinations)
+	destinations := w.persistencylayer.GetOVPPeers(bound, ovpdata)
+	queue := Broadcast(watchmetadata, destinations)
 	return queue
 }
 
@@ -170,7 +172,7 @@ func (w *Watchagent) Join() *OrbitError {
 		return &OrbitError{false, "Is not parked"}
 	}
 
-	w.ma.Join(w.pl,w.Serverconf.Numofwatchers)
+	w.ma.Join(w.persistencylayer, w.Serverconf.Numofwatchers, w.Ovpdata)
 	servermutex.Lock()
 	w.Agentparked = false
 	servermutex.Unlock()
@@ -184,11 +186,11 @@ func (w *Watchagent) Start() *OrbitError {
 	}
 
 	wd := new(Watchmedata)
-	wd.Expose = w.pl.Ovpdata.OVPExpose
+	wd.Expose = w.Ovpdata.OVPExpose
 	servermutex.Lock()
 	wd.Serverdata = w.watched[wd.Expose]
 	servermutex.Unlock()
-	q := w.findWatchers(wd, w.Serverconf.Numofwatchers)
+	q := w.findWatchers(wd, w.Serverconf.Numofwatchers, w.Ovpdata)
 	if q.Size() == 0 {
 		return &OrbitError{false, "Not watched"}
 	}
@@ -259,7 +261,6 @@ func (w *Watchagent) Unwatch(wd *Watchmedata) *OrbitError {
 		delete(w.watched, wd.Expose)
 	}
 	servermutex.Unlock()
-	
 
 	if !ok {
 		return &OrbitError{false, fmt.Sprintf("not found %s", wd.Expose)}
@@ -271,8 +272,8 @@ func (w *Watchagent) Unwatch(wd *Watchmedata) *OrbitError {
 func (w *Watchagent) Describe() Watchagentdesc {
 	var wad Watchagentdesc
 	servermutex.Lock()
-	wad.Expose = w.pl.Ovpdata.OVPExpose
-	wad.Agentepoch = w.pl.Ovpdata.Epoch
+	wad.Expose = w.Ovpdata.OVPExpose
+	wad.Agentepoch = w.Ovpdata.Epoch
 	wad.Agentparked = w.Agentparked
 	wad.Watchers = w.Watchers
 	wad.Watched = make(map[string]Watchdesc)

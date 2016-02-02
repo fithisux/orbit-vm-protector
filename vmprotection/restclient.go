@@ -23,18 +23,19 @@ package vmprotection
 import (
 	"bytes"
 	"fmt"
-	"github.com/fithisux/orbit-dc-protector/utilities"
-	"github.com/jmcvetta/napping"
-	"github.com/oleiade/lane"
 	"log"
 	"os/exec"
 	"strconv"
 	"sync"
+
+	"github.com/fithisux/orbit-dc-protector/utilities"
+	"github.com/jmcvetta/napping"
+	"github.com/oleiade/lane"
 	//	"errors"
 	//	"time"
 )
 
-func SendToWatcher(wd *Watchmedata,
+func SendToWatcher(watchmetadata *Watchmedata,
 	destination utilities.OVPExpose,
 	queue *lane.Queue,
 	wg *sync.WaitGroup) {
@@ -54,7 +55,7 @@ func SendToWatcher(wd *Watchmedata,
 
 	s := napping.Session{}
 
-	resp, err := s.Post(url, wd, &j, &e)
+	resp, err := s.Post(url, watchmetadata, &j, &e)
 
 	if err != nil {
 		log.Printf("failed to watchme on " + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + " because " + err.Error())
@@ -69,13 +70,13 @@ func SendToWatcher(wd *Watchmedata,
 	queue.Enqueue(destination)
 }
 
-func Broadcast(wd *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue {
+func Broadcast(watchmetadata *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue {
 	var wg sync.WaitGroup
 	wg.Add(len(destinations))
 	var queue *lane.Queue = lane.NewQueue()
 
 	for i := 0; i < len(destinations); i++ {
-		go SendToWatcher(wd, destinations[i], queue, &wg)
+		go SendToWatcher(watchmetadata, destinations[i], queue, &wg)
 	}
 
 	wg.Wait()

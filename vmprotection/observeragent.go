@@ -3,9 +3,10 @@ package vmprotection
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/fithisux/orbit-dc-protector/utilities"
 	"github.com/hashicorp/memberlist"
-	"strconv"
 )
 
 type MemberlistAgent struct {
@@ -18,16 +19,16 @@ type Observermesg struct {
 	Mesgtype int
 }
 
-func CreateMemberlistAgent(wa *Watchagent) *MemberlistAgent {
+func CreateMemberlistAgent(watchagent *Watchagent) *MemberlistAgent {
 	ma := new(MemberlistAgent)
 	fmt.Println("c1")
 	c := memberlist.DefaultLocalConfig()
 	fmt.Println("c3")
-	c.Name = wa.pl.Ovpdata.OVPExpose.Name()
+	c.Name = watchagent.Ovpdata.OVPExpose.Name()
 	fmt.Println("c4")
-	c.BindAddr=wa.pl.Ovpdata.OVPExpose.Ovip
-	c.BindPort = wa.pl.Ovpdata.OVPExpose.Serfport
-	c.Events = wa.Observeme
+	c.BindAddr = watchagent.Ovpdata.OVPExpose.Ovip
+	c.BindPort = watchagent.Ovpdata.OVPExpose.Serfport
+	c.Events = watchagent.Observeme
 	fmt.Println("c5")
 	list, err := memberlist.Create(c)
 	fmt.Println("c6")
@@ -40,13 +41,13 @@ func CreateMemberlistAgent(wa *Watchagent) *MemberlistAgent {
 	return ma
 }
 
-func (ma *MemberlistAgent) Join(pl *utilities.PersistencyLayer,bound int) {
-	exposelist := pl.GetOVPPeers(bound)
+func (ma *MemberlistAgent) Join(persistencylayer *utilities.PersistencyLayer, bound int, ovpdata *utilities.OVPData) {
+	exposelist := persistencylayer.GetOVPPeers(bound, ovpdata)
 
 	if len(exposelist) >= 1 {
 		peerlist := make([]string, len(exposelist))
 		for i := 0; i < len(exposelist); i++ {
-			peerlist[i] = exposelist[i].Ovip +":"+strconv.Itoa(exposelist[i].Serfport)
+			peerlist[i] = exposelist[i].Ovip + ":" + strconv.Itoa(exposelist[i].Serfport)
 			fmt.Println("Join point " + peerlist[i])
 		}
 		_, err := ma.list.Join(peerlist)
