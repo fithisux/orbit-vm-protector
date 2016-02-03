@@ -2,7 +2,7 @@
 ===========================================================================
 ORBIT VM PROTECTOR GPL Source Code
 Copyright (C) 2015 Vasileios Anagnostopoulos.
-This file is part of the ORBIT VM PROTECTOR Source Code (?ORBIT VM PROTECTOR Source Code?).  
+This file is part of the ORBIT VM PROTECTOR Source Code (?ORBIT VM PROTECTOR Source Code?).
 ORBIT VM PROTECTOR Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -21,17 +21,17 @@ If you have questions concerning this license or the applicable additional terms
 package main
 
 import (
-	"github.com/emicklei/go-restful"
-	"github.com/fithisux/orbit-vm-protector/vmprotection"
-	"github.com/fithisux/orbit-dc-protector/utilities"
-	"net/http"
-	"time"
 	"log"
+	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/emicklei/go-restful"
+	"github.com/fithisux/orbit-dc-protector/utilities"
+	"github.com/fithisux/orbit-vm-protector/vmprotection"
 )
 
 var wa *vmprotection.Watchagent
-
 
 func orbit_watchme(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_watchme")
@@ -43,6 +43,19 @@ func orbit_watchme(request *restful.Request, response *restful.Response) { //sto
 		return
 	}
 	nresp := wa.Watch(params)
+	response.WriteEntity(nresp)
+}
+
+func orbit_updateme(request *restful.Request, response *restful.Response) { //stop a stream
+	log.Printf("Inside orbit_watchme")
+	params := new(vmprotection.Watchmedata)
+	err := request.ReadEntity(params)
+	if err != nil {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		return
+	}
+	nresp := wa.Update(params)
 	response.WriteEntity(nresp)
 }
 
@@ -77,18 +90,16 @@ func orbit_describe(request *restful.Request, response *restful.Response) { //st
 	response.WriteEntity(nresp)
 }
 
-
 func heartbeat(reviver chan bool) {
 	time.AfterFunc(1*time.Minute, func() {
-		reviver <- true		
+		reviver <- true
 		heartbeat(reviver)
 	})
 }
 
-
 func main() {
-	
-	conf,err := utilities.Parsetoconf()
+
+	conf, err := utilities.Parsetoconf()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -100,8 +111,9 @@ func main() {
 	ws.Route(ws.GET("").To(orbit_describe))
 	ws.Route(ws.POST("/join").To(orbit_join)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	ws.Route(ws.POST("/start").To(orbit_start)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.POST("/watchme").To(orbit_watchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)	
-	ws.Route(ws.POST("/unwatchme").To(orbit_unwatchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)	
+	ws.Route(ws.POST("/register").To(orbit_watchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/update").To(orbit_updateme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/withdraw").To(orbit_unwatchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	wsContainer.Add(ws)
 
 	// Add container filter to enable CORS
@@ -117,7 +129,7 @@ func main() {
 		wsContainer.Filter(wsContainer.OPTIONSFilter)
 	*/
 
-	log.Printf("start listening on localhost:%d\n",conf.Exposeconfig.Ovpexpose.Announceport)
-	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip+":"+strconv.Itoa(conf.Exposeconfig.Ovpexpose.Announceport), Handler: wsContainer}
+	log.Printf("start listening on localhost:%d\n", conf.Exposeconfig.Ovpexpose.Announceport)
+	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip + ":" + strconv.Itoa(conf.Exposeconfig.Ovpexpose.Announceport), Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }

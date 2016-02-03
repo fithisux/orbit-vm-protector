@@ -21,20 +21,16 @@ If you have questions concerning this license or the applicable additional terms
 package vmprotection
 
 import (
-	"fmt"
-	"sync"
-	//	"strconv"
-	"github.com/fithisux/orbit-dc-protector/utilities"
-	"github.com/oleiade/lane"
-	//	"time"
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"os/exec"
 	"strconv"
-)
+	"sync"
 
-const (
-	NOTIFY_JOIN = iota
-	NOTIFY_LEAVE
-	NOTIFY_UPDATE
+	"github.com/fithisux/orbit-dc-protector/utilities"
+	"github.com/hashicorp/memberlist"
+	"github.com/oleiade/lane"
 )
 
 const (
@@ -65,9 +61,8 @@ type Watchagent struct {
 	persistencylayer *utilities.PersistencyLayer
 	Ovpdata          *utilities.OVPData
 	watched          map[utilities.OVPExpose]VMdata
-	ma               *MemberlistAgent
-	Observeme        *Observer
 	Watchers         []utilities.OVPExpose
+	ma               *MemberlistAgent
 }
 
 type OrbitError struct {
@@ -85,10 +80,9 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	vmdata := new(VMdata)
 	vmdata.Serverepoch = watchagent.Ovpdata.Epoch
 	watchagent.watched[json.Exposeconfig.Ovpexpose] = *vmdata
-	watchagent.Observeme = CreateObserver()
-	go ReportHostevents(watchagent)
-	watchagent.ma = CreateMemberlistAgent(watchagent)
+	watchagent.ma = CreateMemberlistAgent(&watchagent.Ovpdata.OVPExpose)
 	go ReportVMEvents(watchagent)
+	go ReportHostevents(watchagent)
 	return watchagent
 }
 
@@ -111,7 +105,7 @@ func ReportVMEvents(watchagent *Watchagent) {
 		wwatchers := watchagent.Watchers
 		servermutex.Unlock()
 		if wwatchers != nil {
-			q := Broadcast(&wd, wwatchers) //TODO, do something on error
+			q := BroadcastUpdate(&wd, wwatchers) //TODO, do something on error
 			fmt.Printf("Broadcasted to %d\n", q.Size())
 		}
 	}
@@ -119,13 +113,13 @@ func ReportVMEvents(watchagent *Watchagent) {
 
 func ReportHostevents(w *Watchagent) {
 	fmt.Println("Started reporthostevents")
-	for mesg := range w.Observeme.Notifier {
-		fmt.Println("hostevent " + strconv.Itoa(mesg.Mesgtype))
-		if mesg.Mesgtype == NOTIFY_LEAVE {
-			fmt.Println("LEFT " + mesg.Name)
+	for nodevent := range w.ma.Ch {
+		fmt.Println("hostevent " + strconv.Itoa(int(nodevent.Event)))
+		if nodevent.Event == memberlist.NodeLeave {
+			fmt.Println("LEFT " + nodevent.Node.Name)
 
 			sd := new(utilities.OVPExpose)
-			err := json.Unmarshal([]byte(mesg.Name), sd)
+			err := json.Unmarshal([]byte(nodevent.Node.Name), sd)
 
 			if err != nil {
 				panic(err.Error)
@@ -158,7 +152,7 @@ func ReportHostevents(w *Watchagent) {
 func (w *Watchagent) findWatchers(watchmetadata *Watchmedata, bound int, ovpdata *utilities.OVPData) *lane.Queue {
 
 	destinations := w.persistencylayer.GetOVPPeers(bound, ovpdata)
-	queue := Broadcast(watchmetadata, destinations)
+	queue := BroadcastUpdate(watchmetadata, destinations)
 	return queue
 }
 
@@ -172,7 +166,9 @@ func (w *Watchagent) Join() *OrbitError {
 		return &OrbitError{false, "Is not parked"}
 	}
 
-	w.ma.Join(w.persistencylayer, w.Serverconf.Numofwatchers, w.Ovpdata)
+	exposelist := w.persistencylayer.GetOVPPeers(w.Serverconf.Numofwatchers, w.Ovpdata)
+
+	w.ma.Join(exposelist)
 	servermutex.Lock()
 	w.Agentparked = false
 	servermutex.Unlock()
@@ -269,6 +265,28 @@ func (w *Watchagent) Unwatch(wd *Watchmedata) *OrbitError {
 	}
 }
 
+func (w *Watchagent) Update(wd *Watchmedata) *OrbitError {
+	temp := w.isRunning()
+	if temp != nil {
+		return temp
+	}
+
+	ok := false
+	var vmdata VMdata
+	servermutex.Lock()
+	vmdata, ok = w.watched[wd.Expose]
+	if ok && wd.Serverdata.Serverepoch >= vmdata.Serverepoch {
+		delete(w.watched, wd.Expose)
+	}
+	servermutex.Unlock()
+
+	if !ok {
+		return &OrbitError{false, fmt.Sprintf("not found %s", wd.Expose)}
+	} else {
+		return &OrbitError{true, ""}
+	}
+}
+
 func (w *Watchagent) Describe() Watchagentdesc {
 	var wad Watchagentdesc
 	servermutex.Lock()
@@ -282,4 +300,19 @@ func (w *Watchagent) Describe() Watchagentdesc {
 	}
 	servermutex.Unlock()
 	return wad
+}
+
+func MakeKnown(vmuuid string, json *utilities.ServerConfig) *OrbitError {
+
+	fmt.Println("makeknown for " + vmuuid)
+	cmd := exec.Command("./failover", vmuuid)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("Notified? " + err.Error())
+		return &OrbitError{false, err.Error()}
+	} else {
+		return &OrbitError{true, "Notified"}
+	}
 }
