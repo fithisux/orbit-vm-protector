@@ -31,7 +31,7 @@ import (
 	"github.com/oleiade/lane"
 )
 
-func BroadcastUpdate(watchmetadata *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue {
+func BroadcastUpdate(watchmetadata *Watchmedata, destinations []utilities.OPData) *lane.Queue {
 	var wg sync.WaitGroup
 	wg.Add(len(destinations))
 	var queue *lane.Queue = lane.NewQueue()
@@ -44,7 +44,7 @@ func BroadcastUpdate(watchmetadata *Watchmedata, destinations []utilities.OVPExp
 	return queue
 }
 
-func BroadcastRegister(watchmetadata *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue {
+func BroadcastRegister(watchmetadata *Watchmedata, destinations []utilities.OPData) *lane.Queue {
 	var wg sync.WaitGroup
 	wg.Add(len(destinations))
 	var queue *lane.Queue = lane.NewQueue()
@@ -55,7 +55,7 @@ func BroadcastRegister(watchmetadata *Watchmedata, destinations []utilities.OVPE
 	return queue
 }
 
-func BroadcastWithdraw(watchmetadata *Watchmedata, destinations []utilities.OVPExpose) *lane.Queue {
+func BroadcastWithdraw(watchmetadata *Watchmedata, destinations []utilities.OPData) *lane.Queue {
 	var wg sync.WaitGroup
 	wg.Add(len(destinations))
 	var queue *lane.Queue = lane.NewQueue()
@@ -66,7 +66,7 @@ func BroadcastWithdraw(watchmetadata *Watchmedata, destinations []utilities.OVPE
 	return queue
 }
 
-func callPeer(watchmetadata *Watchmedata, destination *utilities.OVPExpose, queue *lane.Queue, verb string, wg *sync.WaitGroup) {
+func callPeer(watchmetadata *Watchmedata, destination *utilities.OPData, queue *lane.Queue, verb string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	target := "http://" + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + "/watchdog"
@@ -98,7 +98,7 @@ func callPeer(watchmetadata *Watchmedata, destination *utilities.OVPExpose, queu
 	}
 
 	if verb == "withdraw" || verb == "update" {
-		source := watchmetadata.Expose
+		source := watchmetadata.OPConfig
 		if j["status"].(bool) {
 			queue.Enqueue(destination)
 		} else {
@@ -106,5 +106,5 @@ func callPeer(watchmetadata *Watchmedata, destination *utilities.OVPExpose, queu
 			panic(mesg)
 		}
 	}
-	queue.Enqueue(destination)
+	queue.Enqueue(*destination)
 }

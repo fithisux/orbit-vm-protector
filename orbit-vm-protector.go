@@ -33,8 +33,8 @@ import (
 
 var wa *vmprotection.Watchagent
 
-func orbit_watchme(request *restful.Request, response *restful.Response) { //stop a stream
-	log.Printf("Inside orbit_watchme")
+func orbit_register(request *restful.Request, response *restful.Response) { //stop a stream
+	log.Printf("Inside orbit_register")
 	params := new(vmprotection.Watchmedata)
 	err := request.ReadEntity(params)
 	if err != nil {
@@ -42,11 +42,11 @@ func orbit_watchme(request *restful.Request, response *restful.Response) { //sto
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
-	nresp := wa.Watch(params)
+	nresp := wa.Register(params)
 	response.WriteEntity(nresp)
 }
 
-func orbit_updateme(request *restful.Request, response *restful.Response) { //stop a stream
+func orbit_update(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_watchme")
 	params := new(vmprotection.Watchmedata)
 	err := request.ReadEntity(params)
@@ -59,7 +59,7 @@ func orbit_updateme(request *restful.Request, response *restful.Response) { //st
 	response.WriteEntity(nresp)
 }
 
-func orbit_unwatchme(request *restful.Request, response *restful.Response) { //stop a stream
+func orbit_withdraw(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_unwatchme")
 	params := new(vmprotection.Watchmedata)
 	err := request.ReadEntity(params)
@@ -68,13 +68,19 @@ func orbit_unwatchme(request *restful.Request, response *restful.Response) { //s
 		response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		return
 	}
-	nresp := wa.Unwatch(params)
+	nresp := wa.Withdraw(params)
 	response.WriteEntity(nresp)
 }
 
 func orbit_start(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_start")
 	nresp := wa.Start()
+	response.WriteEntity(nresp)
+}
+
+func orbit_stop(request *restful.Request, response *restful.Response) { //stop a stream
+	log.Printf("Inside orbit_stop")
+	nresp := wa.Stop()
 	response.WriteEntity(nresp)
 }
 
@@ -86,8 +92,7 @@ func orbit_join(request *restful.Request, response *restful.Response) { //stop a
 
 func orbit_describe(request *restful.Request, response *restful.Response) { //stop a stream
 	log.Printf("Inside orbit_describe")
-	nresp := wa.Describe()
-	response.WriteEntity(nresp)
+	response.WriteEntity(wa)
 }
 
 func heartbeat(reviver chan bool) {
@@ -111,9 +116,10 @@ func main() {
 	ws.Route(ws.GET("").To(orbit_describe))
 	ws.Route(ws.POST("/join").To(orbit_join)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	ws.Route(ws.POST("/start").To(orbit_start)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.POST("/register").To(orbit_watchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.POST("/update").To(orbit_updateme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
-	ws.Route(ws.POST("/withdraw").To(orbit_unwatchme)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/stop").To(orbit_stop)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/register").To(orbit_register)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/update").To(orbit_update)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Route(ws.POST("/withdraw").To(orbit_withdraw)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	wsContainer.Add(ws)
 
 	// Add container filter to enable CORS
@@ -129,7 +135,7 @@ func main() {
 		wsContainer.Filter(wsContainer.OPTIONSFilter)
 	*/
 
-	log.Printf("start listening on localhost:%d\n", conf.Exposeconfig.Ovpexpose.Announceport)
-	server := &http.Server{Addr: conf.Exposeconfig.Ovpexpose.Ovip + ":" + strconv.Itoa(conf.Exposeconfig.Ovpexpose.Announceport), Handler: wsContainer}
+	log.Printf("start listening on localhost:%d\n", conf.Opconfig.Announceport)
+	server := &http.Server{Addr: conf.Opconfig.Ovip + ":" + strconv.Itoa(conf.Opconfig.Announceport), Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 }

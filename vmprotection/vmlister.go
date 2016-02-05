@@ -26,7 +26,6 @@ package vmprotection
 // extern int main1();
 import "C"
 import (
-	//	"unsafe"
 	"fmt"
 	"os"
 	"os/signal"
@@ -68,11 +67,11 @@ func myReportEvent(vir_dom_name *C.char, vir_dom_id C.uint, vir_event C.int, vir
 	switch eventtype {
 	case VIR_DOMAIN_EVENT_STOPPED:
 		{
-			if eventdetail == 2 || eventdetail == 5{
+			if eventdetail == 2 || eventdetail == 5 {
 				fmt.Println("Crashed -1")
 				delete(vmlista, vmuuid)
-				Tokenchan <- Listtoken{2, vmuuid, vmlista}				
-			}			
+				Tokenchan <- Listtoken{2, vmuuid, vmlista}
+			}
 		}
 	case VIR_DOMAIN_EVENT_SHUTDOWN:
 		{

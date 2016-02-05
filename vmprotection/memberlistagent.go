@@ -15,15 +15,15 @@ type MemberlistAgent struct {
 	Ch   chan memberlist.NodeEvent
 }
 
-func CreateMemberlistAgent(ovpexpose *utilities.OVPExpose) *MemberlistAgent {
+func CreateMemberlistAgent(opdata *utilities.OPData) *MemberlistAgent {
 	ma := new(MemberlistAgent)
 	fmt.Println("c1")
 	c := memberlist.DefaultLocalConfig()
 	fmt.Println("c3")
-	c.Name = ovpexpose.Name()
+	c.Name = opdata.Name()
 	fmt.Println("c4")
-	c.BindAddr = ovpexpose.Ovip
-	c.BindPort = ovpexpose.Serfport
+	c.BindAddr = opdata.Ovip
+	c.BindPort = opdata.Serfport
 	observer := new(memberlist.ChannelEventDelegate)
 	ma.Ch = make(chan memberlist.NodeEvent)
 	observer.Ch = ma.Ch
@@ -40,11 +40,11 @@ func CreateMemberlistAgent(ovpexpose *utilities.OVPExpose) *MemberlistAgent {
 	return ma
 }
 
-func (ma *MemberlistAgent) Join(exposelist []utilities.OVPExpose) {
-	if len(exposelist) >= 1 {
-		peerlist := make([]string, len(exposelist))
-		for i := 0; i < len(exposelist); i++ {
-			peerlist[i] = exposelist[i].Ovip + ":" + strconv.Itoa(exposelist[i].Serfport)
+func (ma *MemberlistAgent) Join(opdatalist []utilities.OPData) {
+	if len(opdatalist) >= 1 {
+		peerlist := make([]string, len(opdatalist))
+		for i := 0; i < len(opdatalist); i++ {
+			peerlist[i] = opdatalist[i].Ovip + ":" + strconv.Itoa(opdatalist[i].Serfport)
 			fmt.Println("Join point " + peerlist[i])
 		}
 		_, err := ma.list.Join(peerlist)
