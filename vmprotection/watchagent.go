@@ -166,7 +166,7 @@ func (w *Watchagent) Join() *OrbitError {
 		return &OrbitError{false, "Is not parked"}
 	}
 
-	exposelist := w.persistencylayer.GetOVPPeers(w.Serverconf.Numofwatchers, w.Ovpdata)
+	exposelist := w.persistencylayer.GetOVPPeers(w.Serverconf.Ovpconfig.Numofwatchers, w.Ovpdata)
 
 	w.ma.Join(exposelist)
 	servermutex.Lock()
@@ -186,7 +186,7 @@ func (w *Watchagent) Start() *OrbitError {
 	servermutex.Lock()
 	wd.Serverdata = w.watched[wd.Expose]
 	servermutex.Unlock()
-	q := w.findWatchers(wd, w.Serverconf.Numofwatchers, w.Ovpdata)
+	q := w.findWatchers(wd, w.Serverconf.Ovpconfig.Numofwatchers, w.Ovpdata)
 	if q.Size() == 0 {
 		return &OrbitError{false, "Not watched"}
 	}
