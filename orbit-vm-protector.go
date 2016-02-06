@@ -112,7 +112,7 @@ func main() {
 	wsContainer := restful.NewContainer()
 	log.Printf("Registering")
 	ws := new(restful.WebService)
-	ws.Path("/watchdog").Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
+	ws.Path("/ovp").Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	ws.Route(ws.GET("").To(orbit_describe))
 	ws.Route(ws.POST("/join").To(orbit_join)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
 	ws.Route(ws.POST("/start").To(orbit_start)).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
