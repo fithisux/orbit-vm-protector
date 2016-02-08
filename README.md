@@ -11,4 +11,4 @@ A GPL v3 FOSS golang host and VM protector based on
 [2]:https://www.mongodb.org/
 [3]:https://www.mongodb.org/
 
-This is a preview version, presented on July 7th.
+This is an updated version to be presented on Feb 08 2016.
