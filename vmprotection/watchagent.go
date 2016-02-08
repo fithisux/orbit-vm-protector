@@ -86,13 +86,13 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
 
-	ticker := time.NewTicker(time.Duration(watchagent.ovpconfig.Refreshattempts.Timeout) * time.Millisecond)
+	ticker := time.NewTicker(watchagent.ovpconfig.Refreshattempts.Timeout)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
 				watchagent.Refreshwatchers()
-				ticker = time.NewTicker(time.Duration(watchagent.ovpconfig.Refreshattempts.Timeout) * time.Millisecond)
+				ticker = time.NewTicker(watchagent.ovpconfig.Refreshattempts.Timeout)
 			}
 		}
 	}()
