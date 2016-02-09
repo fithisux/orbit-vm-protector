@@ -69,7 +69,7 @@ func BroadcastWithdraw(watchmetadata *Watchmedata, destinations []utilities.OPDa
 func callPeer(watchmetadata *Watchmedata, destination *utilities.OPData, queue *lane.Queue, verb string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	target := "http://" + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + "/watchdog"
+	target := "http://" + destination.Ovip + ":" + strconv.Itoa(destination.Announceport) + "/ovp"
 	url := target + "/" + verb
 	fmt.Println("Instructed as " + url)
 	e := struct {
