@@ -86,6 +86,7 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
 
+	fmt.Println("ok1")
 	ticker := time.NewTicker(watchagent.ovpconfig.Refreshattempts.Timeout)
 	go func() {
 		for {
@@ -97,6 +98,7 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 		}
 	}()
 
+	fmt.Println("ok2")
 	return watchagent
 }
 
