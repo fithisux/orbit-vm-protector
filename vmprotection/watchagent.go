@@ -111,6 +111,15 @@ func (watchagent *Watchagent) reportVMEvents() {
 		watchagent.Vmdata.Servervms = x.Vmlista
 		if x.Status == 2 {
 			MakeKnown(x.Vmuuid)
+			vmdetection := new(utilities.VMDetection)
+			vmdetection.Reporter_ovip = watchagent.Ovip
+			vmdetection.Reporter_dcid = watchagent.Dcid
+			vmdetection.Dcid = watchagent.Dcid
+			vmdetection.Epoch = watchagent.Vmdata.Serverepoch
+			vmdetection.Ovip = watchagent.Ovip
+			vmdetection.Timestamp = time.Now()
+			vmdetection.Vmid = []string{x.Vmuuid}
+			watchagent.persistencylayer.InsertVMDetection(vmdetection)
 		}
 		fmt.Printf("Lista length for broadcasting == %d\n", len(x.Vmlista))
 		servermutex.Lock()
@@ -123,9 +132,9 @@ func (watchagent *Watchagent) reportVMEvents() {
 	}
 }
 
-func (w *Watchagent) reportHostevents() {
+func (watchagent *Watchagent) reportHostevents() {
 	fmt.Println("Started reporthostevents")
-	for nodevent := range w.memberlistagent.Ch {
+	for nodevent := range watchagent.memberlistagent.Ch {
 		fmt.Println("hostevent " + strconv.Itoa(int(nodevent.Event)))
 		if nodevent.Event == memberlist.NodeLeave {
 			fmt.Println("LEFT " + nodevent.Node.Name)
@@ -137,30 +146,43 @@ func (w *Watchagent) reportHostevents() {
 			}
 
 			//pass through if not running
-			if temp := w.isRunning(); temp != nil {
+			if temp := watchagent.isRunning(); temp != nil {
 				return
 			}
 
 			announce := false
 			servermutex.Lock()
-			vmdata, ok := w.watching[sd.OPConfig]
+			vmdata, ok := watchagent.watching[sd.OPConfig]
 			if ok {
 				if sd.Epoch < vmdata.Serverepoch { //stray previous detection but missed deregister
 					panic("stray previous detection but missed deregister")
 				} else if sd.Epoch > vmdata.Serverepoch {
 					panic("left from future but missed register")
 				} else {
-					delete(w.watching, sd.OPConfig)
+					delete(watchagent.watching, sd.OPConfig)
 					announce = true
 				}
 			}
 			servermutex.Unlock()
 
 			if announce {
+
+				vmnames := make([]string, len(vmdata.Servervms))
+				indy := 0
 				for vmuuid := range vmdata.Servervms {
 					_ = MakeKnown(vmuuid)
+					vmnames[indy] = vmuuid
+					indy++
 				}
-
+				vmdetection := new(utilities.VMDetection)
+				vmdetection.Reporter_ovip = watchagent.Ovip
+				vmdetection.Reporter_dcid = watchagent.Dcid
+				vmdetection.Dcid = sd.Dcid
+				vmdetection.Epoch = sd.Epoch
+				vmdetection.Ovip = sd.Ovip
+				vmdetection.Timestamp = time.Now()
+				vmdetection.Vmid = vmnames
+				watchagent.persistencylayer.InsertVMDetection(vmdetection)
 			}
 		}
 	}
