@@ -115,6 +115,7 @@ func (watchagent *Watchagent) reportVMEvents() {
 			vmdetection.Reporter_ovip = watchagent.Ovip
 			vmdetection.Reporter_dcid = watchagent.Dcid
 			vmdetection.Dcid = watchagent.Dcid
+			vmdetection.Breakage = false
 			vmdetection.Epoch = watchagent.Vmdata.Serverepoch
 			vmdetection.Ovip = watchagent.Ovip
 			vmdetection.Timestamp = time.Now()
@@ -177,6 +178,7 @@ func (watchagent *Watchagent) reportHostevents() {
 				vmdetection := new(utilities.VMDetection)
 				vmdetection.Reporter_ovip = watchagent.Ovip
 				vmdetection.Reporter_dcid = watchagent.Dcid
+				vmdetection.Breakage = true
 				vmdetection.Dcid = sd.Dcid
 				vmdetection.Epoch = sd.Epoch
 				vmdetection.Ovip = sd.Ovip
