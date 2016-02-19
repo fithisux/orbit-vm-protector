@@ -55,7 +55,7 @@ func CreateMemberlistAgent(opdata *utilities.OPData) *MemberlistAgent {
 	c.BindAddr = opdata.Ovip
 	c.BindPort = opdata.Serfport
 	ma.Ch = make(chan memberlist.NodeEvent)
-	c.Events = ma
+	//c.Events = ma
 	fmt.Println("c5")
 	list, err := memberlist.Create(c)
 	fmt.Println("c6")
