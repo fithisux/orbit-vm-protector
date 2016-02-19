@@ -17,56 +17,52 @@ In addition, the ORBIT VM PROTECTOR Source Code is also subject to certain addit
 If you have questions concerning this license or the applicable additional terms, you may contact in writing Vasileios Anagnostopoulos, Campani 3 Street, Athens Greece, POBOX 11252.
 ===========================================================================
 */
+// watchagent
+
 package vmprotection
 
 import (
 	"fmt"
-	"strconv"
 
-	"github.com/fithisux/orbit-dc-protector/utilities"
 	"github.com/hashicorp/memberlist"
 )
 
-type MemberlistAgent struct {
-	conf *memberlist.Config
-	list *memberlist.Memberlist
-	Ch   chan memberlist.NodeEvent
+const (
+	NOTIFY_JOIN = iota
+	NOTIFY_LEAVE
+	NOTIFY_UPDATE
+)
+
+type Observermesg struct {
+	Name     string
+	Mesgtype int
 }
 
-func CreateMemberlistAgent(opdata *utilities.OPData, observer *Observer) *MemberlistAgent {
-	ma := new(MemberlistAgent)
-	fmt.Println("c1")
-	c := memberlist.DefaultLocalConfig()
-	fmt.Println("c3")
-	c.Name = opdata.Name()
-	fmt.Println("c4")
-	c.BindAddr = opdata.Ovip
-	c.BindPort = opdata.Serfport
-	c.Events = observer
-	fmt.Println("c5")
-	list, err := memberlist.Create(c)
-	fmt.Println("c6")
-	if err != nil {
-		panic("Failed to create memberlist: " + err.Error())
-	}
-	ma.list = list
-	ma.conf = c
-	fmt.Println("MMBL created")
-	return ma
+func CreateObserver() *Observer {
+	o := new(Observer)
+	o.Notifier = make(chan Observermesg)
+	return o
 }
 
-func (ma *MemberlistAgent) Join(opdatalist []utilities.OPData) {
-	if len(opdatalist) >= 1 {
-		peerlist := make([]string, len(opdatalist))
-		for i := 0; i < len(opdatalist); i++ {
-			peerlist[i] = opdatalist[i].Ovip + ":" + strconv.Itoa(opdatalist[i].Serfport)
-			fmt.Println("Join point " + peerlist[i])
-		}
-		_, err := ma.list.Join(peerlist)
-		if err != nil {
-			panic(err.Error())
-		}
-	} else {
-		panic("Small join failure")
+type Observer struct {
+	Notifier chan Observermesg
+}
+
+func (o *Observer) NotifyJoin(n *memberlist.Node) {
+	fmt.Println("notifyjoin1 " + n.Name)
+	if o.Notifier == nil {
+		panic("NOnnotifier")
 	}
+	o.Notifier <- Observermesg{n.Name, NOTIFY_JOIN}
+	fmt.Println("notifyjoin2 " + n.Name)
+}
+
+func (o *Observer) NotifyLeave(n *memberlist.Node) {
+	fmt.Println("notifyleave " + n.Name)
+	o.Notifier <- Observermesg{n.Name, NOTIFY_LEAVE}
+}
+
+func (o *Observer) NotifyUpdate(n *memberlist.Node) {
+	fmt.Println("notifyupdate " + n.Name)
+	o.Notifier <- Observermesg{n.Name, NOTIFY_UPDATE}
 }

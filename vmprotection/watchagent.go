@@ -30,7 +30,7 @@ import (
 	"time"
 
 	"github.com/fithisux/orbit-dc-protector/utilities"
-	"github.com/hashicorp/memberlist"
+
 	"github.com/oleiade/lane"
 )
 
@@ -66,6 +66,7 @@ type Watchagent struct {
 	persistencylayer *utilities.PersistencyLayer
 	watching         map[utilities.OPConfig]VMdata
 	memberlistagent  *MemberlistAgent
+	Observeme        *Observer
 }
 
 type OrbitError struct {
@@ -76,13 +77,14 @@ type OrbitError struct {
 func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	watchagent := new(Watchagent)
 	watchagent.ovpconfig = json.Ovpconfig
+	watchagent.Observeme = CreateObserver()
 	watchagent.Agentparked = true
 	watchagent.watching = make(map[utilities.OPConfig]VMdata)
 	watchagent.persistencylayer = utilities.CreatePersistencyLayer(&json.Dbconfig)
 	opdata := watchagent.persistencylayer.InitializeOVP(&json.Opconfig)
 	watchagent.OPConfig = opdata.OPConfig
 	watchagent.Vmdata.Serverepoch = opdata.Epoch
-	watchagent.memberlistagent = CreateMemberlistAgent(opdata)
+	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.Observeme)
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
 
@@ -135,14 +137,14 @@ func (watchagent *Watchagent) reportVMEvents() {
 
 func (watchagent *Watchagent) reportHostevents() {
 	fmt.Println("Started reporthostevents")
-	for nodevent := range watchagent.memberlistagent.Ch {
-		fmt.Println("hostevent " + strconv.Itoa(int(nodevent.Event)))
-		if nodevent.Event == memberlist.NodeLeave {
-			fmt.Println("LEFT " + nodevent.Node.Name)
+	for nodevent := range watchagent.Observeme.Notifier {
+		fmt.Println("hostevent " + strconv.Itoa(int(nodevent.Mesgtype)))
+		if nodevent.Mesgtype == NOTIFY_LEAVE {
+			fmt.Println("LEFT " + nodevent.Name)
 			sd := new(utilities.OPData)
 
 			//try to unmarshal from  name
-			if err := json.Unmarshal([]byte(nodevent.Node.Name), sd); err != nil {
+			if err := json.Unmarshal([]byte(nodevent.Name), sd); err != nil {
 				panic(err.Error)
 			}
 
