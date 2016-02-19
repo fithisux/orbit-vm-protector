@@ -40,7 +40,7 @@ type Observermesg struct {
 
 func CreateObserver() *Observer {
 	o := new(Observer)
-	o.Notifier = make(chan Observermesg)
+	o.Notifier = make(chan Observermesg, 2)
 	return o
 }
 
