@@ -33,6 +33,18 @@ type MemberlistAgent struct {
 	Ch   chan memberlist.NodeEvent
 }
 
+func (c *MemberlistAgent) NotifyJoin(n *memberlist.Node) {
+	c.Ch <- memberlist.NodeEvent{memberlist.NodeJoin, n}
+}
+
+func (c *MemberlistAgent) NotifyLeave(n *memberlist.Node) {
+	c.Ch <- memberlist.NodeEvent{memberlist.NodeLeave, n}
+}
+
+func (c *MemberlistAgent) NotifyUpdate(n *memberlist.Node) {
+	c.Ch <- memberlist.NodeEvent{memberlist.NodeUpdate, n}
+}
+
 func CreateMemberlistAgent(opdata *utilities.OPData) *MemberlistAgent {
 	ma := new(MemberlistAgent)
 	fmt.Println("c1")
@@ -42,10 +54,8 @@ func CreateMemberlistAgent(opdata *utilities.OPData) *MemberlistAgent {
 	fmt.Println("c4")
 	c.BindAddr = opdata.Ovip
 	c.BindPort = opdata.Serfport
-	observer := new(memberlist.ChannelEventDelegate)
 	ma.Ch = make(chan memberlist.NodeEvent)
-	observer.Ch = ma.Ch
-	c.Events = observer
+	c.Events = ma
 	fmt.Println("c5")
 	list, err := memberlist.Create(c)
 	fmt.Println("c6")
