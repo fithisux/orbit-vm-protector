@@ -53,8 +53,9 @@ func (o *Observer) NotifyJoin(n *memberlist.Node) {
 	if o.Notifier == nil {
 		panic("NOnnotifier")
 	}
-	o.Notifier <- Observermesg{n.Name, NOTIFY_JOIN}
 	fmt.Println("notifyjoin2 " + n.Name)
+	o.Notifier <- Observermesg{n.Name, NOTIFY_JOIN}
+	fmt.Println("notifyjoin3 " + n.Name)
 }
 
 func (o *Observer) NotifyLeave(n *memberlist.Node) {
