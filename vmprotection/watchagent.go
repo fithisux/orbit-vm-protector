@@ -84,10 +84,10 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	opdata := watchagent.persistencylayer.InitializeOVP(&json.Opconfig)
 	watchagent.OPConfig = opdata.OPConfig
 	watchagent.Vmdata.Serverepoch = opdata.Epoch
-	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.Observeme)
+
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
-
+	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.Observeme)
 	fmt.Println("ok1")
 	ticker := time.NewTicker(watchagent.ovpconfig.Refreshattempts.Timeout)
 	go func() {
