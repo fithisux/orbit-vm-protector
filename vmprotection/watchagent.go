@@ -84,7 +84,7 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	opdata := watchagent.persistencylayer.InitializeOVP(&json.Opconfig)
 	watchagent.OPConfig = opdata.OPConfig
 	watchagent.Vmdata.Serverepoch = opdata.Epoch
-
+	watchagent.Vmdata.Servervms = make(map[string]int)
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
 	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.Observeme)
