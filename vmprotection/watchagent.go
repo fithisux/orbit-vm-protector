@@ -163,6 +163,7 @@ func (watchagent *Watchagent) reportHostevents() {
 					panic("left from future but missed register")
 				} else {
 					delete(watchagent.watching, sd.OPConfig)
+					watchagent.recreateObservers()
 					announce = true
 				}
 			}
