@@ -99,7 +99,7 @@ func callPeer(watchmetadata *Watchmedata, destination *utilities.OPData, queue *
 
 	if verb == "withdraw" || verb == "update" {
 		source := watchmetadata.OPConfig
-		if j["status"].(bool) {
+		if j["Status"].(bool) {
 			queue.Enqueue(destination)
 		} else {
 			mesg := fmt.Sprintf("Not "+verb+" %+v from %+v", source, destination)
