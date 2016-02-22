@@ -218,46 +218,48 @@ func (w *Watchagent) Join() *OrbitError {
 }
 
 func (w *Watchagent) Refreshwatchers() {
-	temp := w.isRunning()
-	if temp != nil {
-		return
-	}
-
-	servermutex.Lock()
-	thresh := len(w.Ovpwatchers)
-	servermutex.Unlock()
-
-	if thresh >= w.ovpconfig.Minwatchers {
-		return
-	}
-
-	var q *lane.Queue
-	found := false
-	for i := 0; i < w.ovpconfig.Refreshattempts.Retries; i++ {
-		q = w.findWatchers()
-		found = (q.Size() >= w.ovpconfig.Minwatchers)
-		if found {
-			break
+	/*
+		temp := w.isRunning()
+		if temp != nil {
+			return
 		}
-	}
 
-	if !found {
-		return
-	}
+		servermutex.Lock()
+		thresh := len(w.Ovpwatchers)
+		servermutex.Unlock()
 
-	servermutex.Lock()
-	watchers := w.Ovpwatchers
-	servermutex.Unlock()
+		if thresh >= w.ovpconfig.Minwatchers {
+			return
+		}
 
-	BroadcastWithdraw(&w.Watchmedata, watchers)
+		var q *lane.Queue
+		found := false
+		for i := 0; i < w.ovpconfig.Refreshattempts.Retries; i++ {
+			q = w.findWatchers()
+			found = (q.Size() >= w.ovpconfig.Minwatchers)
+			if found {
+				break
+			}
+		}
 
-	watchers = make([]utilities.OPData, q.Size())
-	for i := 0; i < len(watchers); i++ {
-		watchers[i] = q.Pop().(utilities.OPData)
-	}
-	servermutex.Lock()
-	w.Ovpwatchers = watchers
-	servermutex.Unlock()
+		if !found {
+			return
+		}
+
+		servermutex.Lock()
+		watchers := w.Ovpwatchers
+		servermutex.Unlock()
+
+		BroadcastWithdraw(&w.Watchmedata, watchers)
+
+		watchers = make([]utilities.OPData, q.Size())
+		for i := 0; i < len(watchers); i++ {
+			watchers[i] = q.Pop().(utilities.OPData)
+		}
+		servermutex.Lock()
+		w.Ovpwatchers = watchers
+		servermutex.Unlock()
+	*/
 }
 
 func (w *Watchagent) Start() *OrbitError {
