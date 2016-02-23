@@ -66,7 +66,7 @@ type Watchagent struct {
 	persistencylayer *utilities.PersistencyLayer
 	watching         map[utilities.OPConfig]VMdata
 	memberlistagent  *MemberlistAgent
-	Observeme        *Observer
+	observer         *Observer
 }
 
 type OrbitError struct {
@@ -77,7 +77,7 @@ type OrbitError struct {
 func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	watchagent := new(Watchagent)
 	watchagent.ovpconfig = json.Ovpconfig
-	watchagent.Observeme = CreateObserver()
+	watchagent.observer = CreateObserver()
 	watchagent.Agentparked = true
 	watchagent.watching = make(map[utilities.OPConfig]VMdata)
 	watchagent.persistencylayer = utilities.CreatePersistencyLayer(&json.Dbconfig)
@@ -87,7 +87,7 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	watchagent.Vmdata.Servervms = make(map[string]int)
 	go watchagent.reportVMEvents()
 	go watchagent.reportHostevents()
-	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.Observeme)
+	watchagent.memberlistagent = CreateMemberlistAgent(opdata, watchagent.observer)
 	fmt.Println("ok1")
 	ticker := time.NewTicker(watchagent.ovpconfig.Refreshattempts.Timeout)
 	go func() {
@@ -137,7 +137,7 @@ func (watchagent *Watchagent) reportVMEvents() {
 
 func (watchagent *Watchagent) reportHostevents() {
 	fmt.Println("Started reporthostevents")
-	for nodevent := range watchagent.Observeme.Notifier {
+	for nodevent := range watchagent.observer.Notifier {
 		fmt.Println("hostevent " + strconv.Itoa(int(nodevent.Mesgtype)))
 		if nodevent.Mesgtype == NOTIFY_LEAVE {
 			fmt.Println("LEFT " + nodevent.Name)
