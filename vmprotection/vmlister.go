@@ -71,7 +71,7 @@ func myReportEvent(vir_dom_name *C.char, vir_dom_id C.uint, vir_event C.int, vir
 				fmt.Println("Crashed -1")
 				delete(vmlista, vmuuid)
 				Tokenchan <- Listtoken{2, vmuuid, vmlista}
-			} else if eventdetail == 0 {
+			} else if eventdetail == 1 {
 				fmt.Println("Shutdown -1")
 				delete(vmlista, vmuuid)
 				Tokenchan <- Listtoken{1, vmuuid, vmlista}
