@@ -81,7 +81,7 @@ func CreateWatchAgent(json *utilities.ServerConfig) *Watchagent {
 	watchagent.Agentparked = true
 	watchagent.watching = make(map[utilities.OPConfig]VMdata)
 	watchagent.persistencylayer = utilities.CreatePersistencyLayer(&json.Dbconfig)
-	opdata := watchagent.persistencylayer.InitializeOVP(&json.Opconfig)
+	opdata := watchagent.persistencylayer.Initialize(&json.Opconfig)
 	watchagent.OPConfig = opdata.OPConfig
 	watchagent.Vmdata.Serverepoch = opdata.Epoch
 	watchagent.Vmdata.Servervms = make(map[string]int)
